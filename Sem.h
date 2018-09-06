@@ -54,3 +54,4 @@ private:
 		std::condition_variable m_cv_uptr;
 		unsigned long m_count;
 	};
+
