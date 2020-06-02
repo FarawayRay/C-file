@@ -9,7 +9,6 @@
 #include <atomic>
 #include <cmath>
 
-//给槽列表使用
 template<typename T = std::mutex>
 class RJMutexLIB
 {
@@ -54,7 +53,6 @@ struct CDataBase : public IDataBase
 class RJEventData
 {
 public:
-	//注册函数指针封装到IDataBase中
 	template <typename T, typename ... Args>
 	RJEventData(T&& f, Args&& ... args)
 	{
@@ -64,7 +62,6 @@ public:
 	~RJEventData()
 	{
 	}
-	//调用注册函数
 	void run()
 	{
 		m_pFun->run();
@@ -208,15 +205,13 @@ struct RJSlot
 		m_pFun->sendEvent(std::forward<Args>(args_)...);
 	}
 
-	//发送emit时，注册到列表中
 	std::shared_ptr<RJEventData> sendEventSync(Args ... args_)
 	{
 		auto event = m_pFun->sendEventSync(std::forward<Args>(args_)...);
 
-		//此类中是否一个此实例被管理(一般情况可忽略)
+		//此类中是否一个此实例被管理(可忽略)
 		if (!m_vec_sync_event.unique()) //注意：C++17及以后被遗弃
 		{
-			//赋值新的，销毁旧的
 			m_vec_sync_event.reset(new std::vector< std::shared_ptr<RJEventData> >(*m_vec_sync_event));
 		}
 
@@ -293,7 +288,6 @@ public:
 			return false;
 		}
 		RJMutexLIB<>::get()->lock();
-		//槽函数中delete信号对象
 		if (!m_slots.unique())
 		{
 			m_slots.reset(new eventSlotVec(*m_slots));
@@ -313,7 +307,7 @@ public:
 			auto ptr = (*iter);
 			{
 				auto vec_sync_event = ptr->m_vec_sync_event;
-				m_slots->erase(iter);//提前去从容器删除，防止接下来执行的时候其他线程emit
+				m_slots->erase(iter);
 
 				if (vec_sync_event->size() > 0)
 				{
@@ -354,7 +348,6 @@ public:
 		auto iter = slot->begin();
 		while (iter != slot->end())
 		{
-			// 如果目前的iter 已经 unconnect 就 跳过
 			if (isExistInSlots(*iter))
 			{
 				(*iter)->sendEvent((args_)...);
@@ -373,8 +366,6 @@ public:
 		auto iter = m_slots->begin();
 		while (iter != m_slots->end())
 		{
-			//如果目前的iter 已经 unconnect 就 跳过
-			//此时另外线程删除？
 			auto event = (*iter)->sendEventSync((args_)...);
 			p_eventLoop->addEventList(event);
 			iter++;
